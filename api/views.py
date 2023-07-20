@@ -36,7 +36,7 @@ class LoginView(KnoxLoginView):
         serializer.is_valid(raise_exception=True)
         student = serializer.validated_data
         _, token = AuthToken.objects.create(student)
-        return Response({"student": StudentSerializer(student).data, "token": token})
+        return Response({"student": StudentSerializer(student).data, "token": token},Response(self.request.user,status=status.HTTP_202_ACCEPTED))
 
 
 class ManageStudentView(generics.RetrieveUpdateAPIView):
@@ -47,7 +47,7 @@ class ManageStudentView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         """Retrieve and return authenticated student"""
-        return self.request.user
+        return Response(self.request.user,status=status.HTTP_200_OK)
 
 
 class RegisterAPI(generics.GenericAPIView):
@@ -65,6 +65,7 @@ class RegisterAPI(generics.GenericAPIView):
                 ).data,
                 "token": AuthToken.objects.create(student)[1],
             }
+            ,status=status.HTTP_201_CREATED
         )
 
 
@@ -87,7 +88,7 @@ def student_main_details(request):
     if request.method == "GET":
         students = Student.objects.all()
         serializer = StudentMainDetailsSerializer(students, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -95,12 +96,15 @@ def student_secondary_details(request):
     if request.method == "GET":
         students = Student.objects.all()
         serializer = StudentSecondaryDetailsSerializer(students, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+
+    def get(self):
+        return Response(self.queryset,status=status.HTTP_200_OK)
 
 
 class EnrollmentViewSet(viewsets.ModelViewSet):
