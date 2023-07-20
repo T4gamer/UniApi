@@ -140,8 +140,10 @@ class LectureViewSet(viewsets.ModelViewSet):
     queryset = Lecture.objects.all()
     serializer_class = LectureSerializer
 
-    def get(self):
-        return Response(self.queryset, status=status.HTTP_200_OK)
+    def list(self, request:Request, *args, **kwargs):
+        lectures = self.queryset.filter(course=request.query_params.get('course'))
+        serializer = LectureSerializer(lectures , many=True)
+        return Response(serializer.data)
 
 
 class LectureTimeViewSet(viewsets.ModelViewSet):
