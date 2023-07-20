@@ -15,6 +15,17 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         model = Enrollment
         fields = ("id", "student", "course", "date_enrolled")
 
+    def validate(self, attrs):
+        course_id = attrs["course"].id
+        course = Course.objects.get(pk=course_id)
+        if course:
+            if not course.students.filter(pk=attrs["student"].serial_number).exists():
+                return super().validate(attrs)
+            else:
+                raise ValidationError("the student is already enrolled in the course")
+        else:
+            raise ValidationError(f"there is no course with id{attrs[course]}")
+
 
 class LectureSerializer(serializers.ModelSerializer):
     class Meta:

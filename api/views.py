@@ -1,6 +1,7 @@
 from rest_framework import status, generics, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.request import Request
 from students.models import Student, Course, Enrollment, Lecture, LectureTime
 from knox.models import AuthToken
 from .serializers import (
@@ -36,7 +37,10 @@ class LoginView(KnoxLoginView):
         serializer.is_valid(raise_exception=True)
         student = serializer.validated_data
         _, token = AuthToken.objects.create(student)
-        return Response({"student": StudentSerializer(student).data, "token": token},Response(self.request.user,status=status.HTTP_202_ACCEPTED))
+        return Response(
+            {"student": StudentSerializer(student).data, "token": token},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 class ManageStudentView(generics.RetrieveUpdateAPIView):
@@ -47,7 +51,7 @@ class ManageStudentView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         """Retrieve and return authenticated student"""
-        return Response(self.request.user,status=status.HTTP_200_OK)
+        return Response(self.request.user, status=status.HTTP_200_OK)
 
 
 class RegisterAPI(generics.GenericAPIView):
@@ -64,8 +68,8 @@ class RegisterAPI(generics.GenericAPIView):
                     student, context=self.get_serializer_context()
                 ).data,
                 "token": AuthToken.objects.create(student)[1],
-            }
-            ,status=status.HTTP_201_CREATED
+            },
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -88,7 +92,7 @@ def student_main_details(request):
     if request.method == "GET":
         students = Student.objects.all()
         serializer = StudentMainDetailsSerializer(students, many=True)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -96,7 +100,7 @@ def student_secondary_details(request):
     if request.method == "GET":
         students = Student.objects.all()
         serializer = StudentSecondaryDetailsSerializer(students, many=True)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -104,19 +108,40 @@ class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
 
     def get(self):
-        return Response(self.queryset,status=status.HTTP_200_OK)
+        return Response(self.queryset, status=status.HTTP_200_OK)
 
 
 class EnrollmentViewSet(viewsets.ModelViewSet):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
 
+    def get(self):
+        return Response(self.queryset, status=status.HTTP_200_OK)
+
+    def create(self, request: Request, *args, **kwargs):
+        student_serial = request.data["student"]
+        if student_serial == request.user.serial_number:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            enrollment = serializer.save()
+            return Response(enrollment,status=status.HTTP_201_CREATED)
+        return Response(
+            {"detail": "You can only create an enrollment for yourself"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
 
 class LectureViewSet(viewsets.ModelViewSet):
     queryset = Lecture.objects.all()
     serializer_class = LectureSerializer
 
+    def get(self):
+        return Response(self.queryset, status=status.HTTP_200_OK)
+
 
 class LectureTimeViewSet(viewsets.ModelViewSet):
     queryset = LectureTime.objects.all()
     serializer_class = LectureTimeSerializer
+
+    def get(self):
+        return Response(self.queryset, status=status.HTTP_200_OK)
