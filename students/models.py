@@ -14,6 +14,9 @@ class Teacher(models.Model):
     last_name = models.CharField(max_length=30)
     email = models.EmailField()
 
+    def __str__(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
 
 class StudentManager(BaseUserManager):
     def create_user(self, serial_number, password=None, **extra_fields):
@@ -89,7 +92,7 @@ class Student(AbstractBaseUser, PermissionsMixin):
     supervisor = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
-        return f"[serial_number:{self.serial_number},password:{self.password},first_name:{self.first_name}]"
+        return f"{self.serial_number}:{self.first_name} {self.last_name}"
 
 
 class Course(models.Model):
@@ -98,17 +101,27 @@ class Course(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     students = models.ManyToManyField(Student, through="Enrollment")
 
+    def __str__(self) -> str:
+        return f"{self.code}:{self.name}"
+
 
 class Enrollment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     date_enrolled = models.DateField(auto_now_add=True)
 
+    def __str__(self) -> str:
+        return f"{Course.objects.get(pk=self.course)}:{Student.objects.get(pk=self.student)}"
+
 
 class Lecture(models.Model):
+    title = models.CharField(max_length=20 ,null=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    day_of_week = models.IntegerField()
     lecture_time = models.ForeignKey("LectureTime", on_delete=models.CASCADE)
+
+    def __str__(self) -> str:
+        return f"{self.title}"
+
 
 
 class LectureTime(models.Model):
@@ -118,4 +131,19 @@ class LectureTime(models.Model):
         ("12:00", "12:00 PM"),
         ("14:00", "2:00 PM"),
     ]
+
+    DAY_CHOICES = [
+        ('SU',"SUNDAY"),
+        ('MO','MONDAY'),
+        ('TU',"TUESDAY"),
+        ('WE',"WEDNESDAY"),
+        ('TH',"THURSDAY"),
+        ('FR',"FRIDAY"),
+        ('SA',"SATURDAY")
+    ]
+
     start_time = models.CharField(max_length=5, choices=LECTURE_TIMES)
+    day = models.CharField(max_length=2,choices=DAY_CHOICES,default="MO")
+
+    def __str__(self) -> str:
+        return f"{self.day_of_week}:{self.get_day_display()}"

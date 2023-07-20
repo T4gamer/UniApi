@@ -15,10 +15,19 @@ urlpatterns = [
     path("logoutall/", knox_views.LogoutAllView.as_view(), name="logoutall"),
     path("courses/", views.CourseViewSet.as_view({"get": "list"}), name="courses"),
     path(
-        "enrollment/", views.EnrollmentViewSet.as_view({"get": "list"}), name="enrollment"
+        "enrollment/",
+        views.EnrollmentViewSet.as_view({"get": "list"}),
+        name="enrollment",
     ),
     path(
-        "enroll/", views.EnrollmentViewSet.as_view({"post": "create"}), name="signIn course"
+        "disenroll/",
+        views.EnrollmentViewSet.as_view({"get": "delete"}),
+        name="enrollment",
+    ),
+    path(
+        "enroll/",
+        views.EnrollmentViewSet.as_view({"post": "create"}),
+        name="signIn course",
     ),
     path("lectures/", views.LectureViewSet.as_view({"get": "list"}), name="lectures"),
 ]

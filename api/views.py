@@ -122,16 +122,28 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
             if enroll["student"] == request.user.serial_number:
                 response_list.append(enroll)
         return Response(response_list)
-        
+
     def create(self, request: Request, *args, **kwargs):
         student_serial = request.data["student"]
         if student_serial == request.user.serial_number:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            enrollment = serializer.save()
-            return Response(request.data,status=status.HTTP_201_CREATED)
+            serializer.save()
+            return Response(request.data, status=status.HTTP_201_CREATED)
         return Response(
             {"detail": "You can only create an enrollment for yourself"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    def delete(self, request, *args, **kwargs):
+        params = request.query_params
+        if params.get("student_id") == request.user.serial_number:
+            self.queryset.filter(
+                student=params.get("student_id"), course=params.get("course_id")
+            ).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "You can only delete an enrollment for yourself"},
             status=status.HTTP_403_FORBIDDEN,
         )
 
@@ -140,9 +152,9 @@ class LectureViewSet(viewsets.ModelViewSet):
     queryset = Lecture.objects.all()
     serializer_class = LectureSerializer
 
-    def list(self, request:Request, *args, **kwargs):
-        lectures = self.queryset.filter(course=request.query_params.get('course'))
-        serializer = LectureSerializer(lectures , many=True)
+    def list(self, request: Request, *args, **kwargs):
+        lectures = self.queryset.filter(course=request.query_params.get("course"))
+        serializer = LectureSerializer(lectures, many=True)
         return Response(serializer.data)
 
 
