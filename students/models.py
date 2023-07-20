@@ -111,7 +111,7 @@ class Enrollment(models.Model):
     date_enrolled = models.DateField(auto_now_add=True)
 
     def __str__(self) -> str:
-        return f"{Course.objects.get(pk=self.course)}:{Student.objects.get(pk=self.student)}"
+        return f"{Course.objects.get(pk=self.course.pk)}:{Student.objects.get(pk=self.student.pk)}"
 
 
 class Lecture(models.Model):
@@ -120,7 +120,7 @@ class Lecture(models.Model):
     lecture_time = models.ForeignKey("LectureTime", on_delete=models.CASCADE)
 
     def __str__(self) -> str:
-        return f"{self.title}"
+        return f"{self.course.name}:{self.title}"
 
 
 
@@ -146,4 +146,4 @@ class LectureTime(models.Model):
     day = models.CharField(max_length=2,choices=DAY_CHOICES,default="MO")
 
     def __str__(self) -> str:
-        return f"{self.day_of_week}:{self.get_day_display()}"
+        return f"{self.start_time}:{self.get_day_display()}"
