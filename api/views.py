@@ -115,16 +115,21 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
 
-    def get(self):
-        return Response(self.queryset, status=status.HTTP_200_OK)
-
+    def list(self, request, *args, **kwargs):
+        enrollment_list = super().list(request, *args, **kwargs).data
+        response_list = []
+        for enroll in enrollment_list:
+            if enroll["student"] == request.user.serial_number:
+                response_list.append(enroll)
+        return Response(response_list)
+        
     def create(self, request: Request, *args, **kwargs):
         student_serial = request.data["student"]
         if student_serial == request.user.serial_number:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             enrollment = serializer.save()
-            return Response(enrollment,status=status.HTTP_201_CREATED)
+            return Response(request.data,status=status.HTTP_201_CREATED)
         return Response(
             {"detail": "You can only create an enrollment for yourself"},
             status=status.HTTP_403_FORBIDDEN,
