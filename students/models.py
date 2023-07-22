@@ -1,3 +1,4 @@
+from typing import Iterable, Optional
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -53,6 +54,14 @@ class Student(AbstractBaseUser, PermissionsMixin):
     ]
 
     RESIDENCE_CHOICES = [("I", "inside"), ("O", "outside")]
+
+    current_semester = models.ForeignKey(
+        "Semester",
+        related_name="current_students",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     serial_number = models.IntegerField(primary_key=True)
     first_name = models.CharField(max_length=30)
@@ -115,13 +124,13 @@ class Enrollment(models.Model):
 
 
 class Lecture(models.Model):
-    title = models.CharField(max_length=20 ,null=True)
+    title = models.CharField(max_length=20, null=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    unites = models.IntegerField()
     lecture_time = models.ForeignKey("LectureTime", on_delete=models.CASCADE)
 
     def __str__(self) -> str:
         return f"{self.course.name}:{self.title}"
-
 
 
 class LectureTime(models.Model):
@@ -133,17 +142,53 @@ class LectureTime(models.Model):
     ]
 
     DAY_CHOICES = [
-        ('SU',"SUNDAY"),
-        ('MO','MONDAY'),
-        ('TU',"TUESDAY"),
-        ('WE',"WEDNESDAY"),
-        ('TH',"THURSDAY"),
-        ('FR',"FRIDAY"),
-        ('SA',"SATURDAY")
+        ("SU", "SUNDAY"),
+        ("MO", "MONDAY"),
+        ("TU", "TUESDAY"),
+        ("WE", "WEDNESDAY"),
+        ("TH", "THURSDAY"),
+        ("FR", "FRIDAY"),
+        ("SA", "SATURDAY"),
     ]
 
     start_time = models.CharField(max_length=5, choices=LECTURE_TIMES)
-    day = models.CharField(max_length=2,choices=DAY_CHOICES,default="MO")
+    day = models.CharField(max_length=2, choices=DAY_CHOICES, default="MO")
 
     def __str__(self) -> str:
         return f"{self.start_time}:{self.get_day_display()}"
+
+
+class Semester(models.Model):
+    SEASON_CHOICES = [("F", "FALL"), ("S", "SPRING")]
+    season = models.CharField(max_length=1, choices=SEASON_CHOICES)
+    year = models.PositiveIntegerField()
+    students = models.ManyToManyField(Student, related_name="semesters", blank=True)
+
+
+class Result(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    semester = models.ForeignKey(
+        Semester, on_delete=models.CASCADE, related_name="results"
+    )
+
+    work_degree = models.IntegerField()
+    semifinal_degree = models.IntegerField()
+    final_degree = models.IntegerField()
+
+    total_degree = models.IntegerField()
+
+    def save(self, *args, **kwargs) -> None:
+        self.total_degree = self.work_degree + self.semifinal_degree + self.final_degree
+        return super().save(*args, **kwargs)
+
+
+class SemesterResult(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    subjects = models.ManyToManyField(to=Result, default=None)
+    total_degree = models.PositiveIntegerField(default=0)
+
+
+class Post(models.Model):
+    content = models.CharField(max_length=50)
+    image_link = models.CharField(max_length=30)
