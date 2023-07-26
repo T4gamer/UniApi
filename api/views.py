@@ -1,8 +1,20 @@
 from rest_framework import status, generics, viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.request import Request
-from students.models import Student, Course, Enrollment, Lecture, LectureTime
+from django.db.models import Q
+from students.models import (
+    Student,
+    Course,
+    Enrollment,
+    Lecture,
+    LectureTime,
+    SemesterResult,
+    Semester,
+    Post,
+    Result,
+)
 from knox.models import AuthToken
 from .serializers import (
     StudentSerializer,
@@ -14,6 +26,10 @@ from .serializers import (
     EnrollmentSerializer,
     LectureSerializer,
     LectureTimeSerializer,
+    SemesterResultSerializer,
+    ResultSerializer,
+    SemesterSerializer,
+    PostSerializer,
 )
 
 # rest_framework imports
@@ -164,3 +180,81 @@ class LectureTimeViewSet(viewsets.ModelViewSet):
 
     def get(self):
         return Response(self.queryset, status=status.HTTP_200_OK)
+
+
+class SemesterViewSet(viewsets.ModelViewSet):
+    queryset = Semester.objects.all()
+    serializer_class = SemesterSerializer
+
+    def create(self, request: Request, *args, **kwargs):
+        sem_season = request.data["season"]
+        sem_year = request.data["year"]
+        if (
+            self.queryset.filter(year=sem_year).exists
+            and self.queryset.filter(season=sem_season).exists
+        ):
+            raise ValidationError("this semester already exist")
+        else:
+            return super().create(request, *args, **kwargs)
+
+
+class ResultViewSet(viewsets.ModelViewSet):
+    queryset = Result.objects.all()
+    serializer_class = ResultSerializer
+
+    def create(self, request, *args, **kwargs):
+        student_id = request.data["student"]
+        user_id = request.user.serial_number
+        if user_id != student_id:
+            raise ValidationError("you can create a result for other students")
+        else:
+            if (
+                self.queryset.filter(student=student_id).exists
+                and self.queryset.filter(course=request.data["course"])
+                and self.queryset.filter(semester=request["semester"])
+            ):
+                raise ValidationError("there is already a result for this subject")
+            else:
+                return super().create(request, *args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        user_id = request.user.serial_number
+        result_list = []
+        for result in self.queryset.values_list():
+            if user_id == result[2]:
+                result_list.append(self.queryset.get(pk=result[0]))
+        serailizer = ResultSerializer(result_list,many=True)
+        return Response(serailizer.data)
+
+
+class SemesterResultViewSet(viewsets.ModelViewSet):
+    queryset = SemesterResult.objects.all()
+    serializer_class = SemesterResultSerializer
+
+    def create(self, request, *args, **kwargs):
+        student_id = request.data["student"]
+        user_id = request.user.serial_number
+        if user_id != student_id:
+            raise ValidationError("you can create a result for other students")
+        else:
+            if (
+                self.queryset.filter(student=student_id).exists
+                and self.queryset.filter(subjects=request.data["subjects"][0])
+                and self.queryset.filter(semester=request.data["semester"])
+            ):
+                raise ValidationError("there is already a result for this subject")
+            else:
+                return super().create(request, *args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        semResult = []
+        for item in self.queryset.all():
+            if item.student.serial_number == request.user.serial_number:
+                semResult.append(item)
+        serializer = SemesterResultSerializer(semResult, many=True)
+        return Response(serializer.data)
+
+
+class PostViewSet(viewsets.ModelViewSet):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer

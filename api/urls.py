@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
 from knox import views as knox_views
 from . import views
 
@@ -30,4 +31,11 @@ urlpatterns = [
         name="signIn course",
     ),
     path("lectures/", views.LectureViewSet.as_view({"get": "list"}), name="lectures"),
+    path("results/", views.ResultViewSet.as_view({"get": "list"})),
+    path("results/", views.ResultViewSet.as_view({"post": "create"})),
+    path("semresult/", views.SemesterResultViewSet.as_view({"post": "create","get": "list"})),
+    path("semester/",views.SemesterViewSet.as_view({"get":"list"})),
+    path("post/",views.PostViewSet.as_view({"get":"list"}))
+
+    # path("semresult/", views.SemesterResultViewSet.as_view({})),
 ]

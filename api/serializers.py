@@ -1,6 +1,16 @@
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
-from students.models import Student, Course, Enrollment, Lecture, LectureTime
+from students.models import (
+    Student,
+    Course,
+    Enrollment,
+    Lecture,
+    LectureTime,
+    Semester,
+    Result,
+    SemesterResult,
+    Post,
+)
 from django.contrib.auth import authenticate
 
 
@@ -30,7 +40,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 class LectureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lecture
-        fields = ("id", "course", "day_of_week", "lecture_time")
+        fields = "__all__"
 
 
 class LectureTimeSerializer(serializers.ModelSerializer):
@@ -164,3 +174,35 @@ class StudentLoginSerializer(serializers.Serializer):
         if student and student.is_active:
             return student
         raise serializers.ValidationError("Incorrect Credentials")
+
+
+class SemesterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Semester
+        fields = ["season", "year", "students"]
+
+
+class ResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Result
+        fields = [
+            "course",
+            "student",
+            "semester",
+            "work_degree",
+            "semifinal_degree",
+            "final_degree",
+            "total_degree",
+        ]
+
+
+class SemesterResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SemesterResult
+        fields = "__all__"
+
+
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ["content", "image_link"]

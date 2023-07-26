@@ -164,6 +164,9 @@ class Semester(models.Model):
     year = models.PositiveIntegerField()
     students = models.ManyToManyField(Student, related_name="semesters", blank=True)
 
+    def __str__(self) -> str:
+        return f"{self.season}{self.year}"
+
 
 class Result(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
@@ -171,12 +174,14 @@ class Result(models.Model):
     semester = models.ForeignKey(
         Semester, on_delete=models.CASCADE, related_name="results"
     )
-
     work_degree = models.IntegerField()
     semifinal_degree = models.IntegerField()
     final_degree = models.IntegerField()
 
     total_degree = models.IntegerField()
+
+    def __str__(self) -> str:
+        return f"{self.course.name}:{self.total_degree}"
 
     def save(self, *args, **kwargs) -> None:
         self.total_degree = self.work_degree + self.semifinal_degree + self.final_degree
@@ -187,8 +192,13 @@ class SemesterResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     subjects = models.ManyToManyField(to=Result, default=None)
     total_degree = models.PositiveIntegerField(default=0)
-
+    
+    def __str__(self) -> str:
+        return f"{self.student.first_name} {self.student.last_name}"
 
 class Post(models.Model):
     content = models.CharField(max_length=50)
     image_link = models.CharField(max_length=30)
+
+    def __str__(self) -> str:
+        return f"{self.content}"
