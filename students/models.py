@@ -177,7 +177,6 @@ class Result(models.Model):
     work_degree = models.IntegerField()
     semifinal_degree = models.IntegerField()
     final_degree = models.IntegerField()
-
     total_degree = models.IntegerField()
 
     def __str__(self) -> str:
@@ -192,7 +191,8 @@ class SemesterResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     subjects = models.ManyToManyField(to=Result, default=None)
     total_degree = models.PositiveIntegerField(default=0)
-    
+    semester = models.ForeignKey(Semester , on_delete=models.CASCADE)
+        
     def __str__(self) -> str:
         return f"{self.student.first_name} {self.student.last_name}"
 

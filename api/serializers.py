@@ -79,6 +79,7 @@ class StudentMainDetailsSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
 
         # Remove the fields you want to exclude from the response
+        representation.pop("password",None)
         representation.pop("groups", None)
         representation.pop("user_permissions", None)
         representation.pop("last_login", None)
@@ -106,6 +107,7 @@ class StudentSecondaryDetailsSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
 
         # Remove the fields you want to exclude from the response
+        representation.pop("password",None)
         representation.pop("groups", None)
         representation.pop("user_permissions", None)
         representation.pop("last_login", None)
@@ -199,8 +201,7 @@ class ResultSerializer(serializers.ModelSerializer):
 class SemesterResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = SemesterResult
-        fields = "__all__"
-
+        fields = '__all__'
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:

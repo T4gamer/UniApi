@@ -59,17 +59,6 @@ class LoginView(KnoxLoginView):
         )
 
 
-class ManageStudentView(generics.RetrieveUpdateAPIView):
-    """Manage the authenticated student"""
-
-    serializer_class = StudentSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get_object(self):
-        """Retrieve and return authenticated student"""
-        return Response(self.request.user, status=status.HTTP_200_OK)
-
-
 class RegisterAPI(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = RegisterSerializer
@@ -107,16 +96,20 @@ def student(request):
 def student_main_details(request):
     if request.method == "GET":
         students = Student.objects.all()
-        serializer = StudentMainDetailsSerializer(students, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        for student in students:
+            if student.serial_number == request.user.serial_number:
+                serializer = StudentMainDetailsSerializer(student)
+                return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
 def student_secondary_details(request):
     if request.method == "GET":
         students = Student.objects.all()
-        serializer = StudentSecondaryDetailsSerializer(students, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        for student in students:
+            if student.serial_number == request.user.serial_number:
+                serializer = StudentSecondaryDetailsSerializer(student)
+                return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -223,7 +216,7 @@ class ResultViewSet(viewsets.ModelViewSet):
         for result in self.queryset.values_list():
             if user_id == result[2]:
                 result_list.append(self.queryset.get(pk=result[0]))
-        serailizer = ResultSerializer(result_list,many=True)
+        serailizer = ResultSerializer(result_list, many=True)
         return Response(serailizer.data)
 
 
@@ -232,19 +225,18 @@ class SemesterResultViewSet(viewsets.ModelViewSet):
     serializer_class = SemesterResultSerializer
 
     def create(self, request, *args, **kwargs):
+        subject_exist = False
         student_id = request.data["student"]
         user_id = request.user.serial_number
         if user_id != student_id:
             raise ValidationError("you can create a result for other students")
+        if (
+            self.queryset.filter(semester=request.data["semester"]).exists()
+            and self.queryset.filter(student=student_id).exists()
+        ):
+            raise ValidationError("there is already a result for this semester")
         else:
-            if (
-                self.queryset.filter(student=student_id).exists
-                and self.queryset.filter(subjects=request.data["subjects"][0])
-                and self.queryset.filter(semester=request.data["semester"])
-            ):
-                raise ValidationError("there is already a result for this subject")
-            else:
-                return super().create(request, *args, **kwargs)
+            return super().create(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
         semResult = []
@@ -258,3 +250,8 @@ class SemesterResultViewSet(viewsets.ModelViewSet):
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+
+
+class SemesterViewSet(viewsets.ModelViewSet):
+    queryset = Semester.objects.all()
+    serializer_class = SemesterSerializer

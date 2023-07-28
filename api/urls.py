@@ -6,11 +6,9 @@ from . import views
 app_name = "students"
 
 urlpatterns = [
-    path("students/", views.student),
-    path("students/main/", views.student_main_details),
-    path("students/secondary/", views.student_secondary_details),
+    path("student/main/", views.student_main_details),
+    path("student/secondary/", views.student_secondary_details),
     path("register/", views.RegisterAPI.as_view(), name="register"),
-    path("profile/", views.ManageStudentView.as_view(), name="profile"),
     path("login/", views.LoginView.as_view(), name="login"),
     path("logout/", knox_views.LogoutView.as_view(), name="logout"),
     path("logoutall/", knox_views.LogoutAllView.as_view(), name="logoutall"),
@@ -35,7 +33,8 @@ urlpatterns = [
     path("results/", views.ResultViewSet.as_view({"post": "create"})),
     path("semresult/", views.SemesterResultViewSet.as_view({"post": "create","get": "list"})),
     path("semester/",views.SemesterViewSet.as_view({"get":"list"})),
-    path("post/",views.PostViewSet.as_view({"get":"list"}))
+    path("post/",views.PostViewSet.as_view({"get":"list"})),
+    path("semester",views.SemesterViewSet.as_view({"get":"list"})),
 
     # path("semresult/", views.SemesterResultViewSet.as_view({})),
 ]
